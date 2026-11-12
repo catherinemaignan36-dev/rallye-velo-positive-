@@ -711,5 +711,17 @@ footer p {
   .consigne-etape, .bloc-enigme { padding: 18px; }
   .panneau-etape h2 { font-size: 31px; }
 }
+.carte-rallye {
+  width: 100%;
+  height: 320px;
+  min-height: 320px;
+  margin: 20px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f1f1f1;
+}
 
+.carte-rallye p {
+  padding: 16px;
+}
 
