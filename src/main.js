@@ -1,6 +1,6 @@
 import './style.css'
 import { supabase } from './supabase.js'
-
+import { initialiserCarteRallye, actualiserPositionCarte } from './carte-rallye.js'
 const app = document.querySelector('#app')
 
 if (!app) {
@@ -159,6 +159,9 @@ app.innerHTML = `
     <span id="numero-etape" class="numero-etape"></span>
     <h2 id="titre-etape"></h2><p id="intro-etape"></p>
     <div class="lieu-etape"><span id="picto-etape" class="lieu-picto"></span><div><strong id="libelle-lieu">Votre destination</strong><p id="nom-lieu"></p></div></div>
+    <div id="carte-rallye" class="carte-rallye">
+  <p>Chargement de la carte...</p>
+</div>
     <div id="attente-gps" class="consigne-etape">
       <strong>Étape encore verrouillée</strong>
       <p>Rejoignez ce lieu à vélo. L'énigme se débloquera lorsque vous serez à moins de 60 mètres.</p>
@@ -705,7 +708,7 @@ function afficherEtape(index) {
 
   appliquerPhotoEtape(stage.number)
   afficherEcran(ecranEtape)
-
+  initialiserCarteRallye()
   if (index === 0) {
     debloquerEtape()
   } else {
@@ -744,7 +747,7 @@ function demarrerSuiviGPS() {
       localisationAutorisee = true
 
       const { latitude, longitude, accuracy } = position.coords
-
+actualiserPositionCarte(latitude, longitude)
       const distance = calculerDistanceMetres(
         latitude,
         longitude,
