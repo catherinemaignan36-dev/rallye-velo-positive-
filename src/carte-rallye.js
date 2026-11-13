@@ -1,6 +1,7 @@
 
 let carte = null
 let marqueurPosition = null
+let iconeVelo = null
 
 const lieuxRallye = [
   { numero: 1, nom: "Office de tourisme Saint-Martin", lat: 46.205735, lng: -1.365491 },
@@ -31,6 +32,13 @@ export function initialiserCarteRallye() {
       "<p>La carte ne peut pas charger. Vérifiez votre connexion.</p>"
     return
   }
+
+  iconeVelo = window.L.divIcon({
+    className: "icone-velo-rallye",
+    html: '<div style="font-size:30px; line-height:36px;">🚴</div>',
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  })
 
   if (carte) {
     setTimeout(() => carte.invalidateSize(), 300)
@@ -85,12 +93,9 @@ export function actualiserPositionCarte(latitude, longitude) {
   const position = [latitude, longitude]
 
   if (!marqueurPosition) {
-    marqueurPosition = window.L.circleMarker(position, {
-      radius: 9,
-      color: "#ffffff",
-      weight: 3,
-      fillColor: "#2678d4",
-      fillOpacity: 1
+    marqueurPosition = window.L.marker(position, {
+      icon: iconeVelo,
+      zIndexOffset: 1000
     }).addTo(carte)
 
     marqueurPosition.bindPopup("Votre position")
