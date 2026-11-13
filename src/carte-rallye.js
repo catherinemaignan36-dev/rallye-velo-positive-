@@ -2,6 +2,7 @@
 let carte = null
 let marqueurPosition = null
 let iconeVelo = null
+let traceItineraire = null
 
 const lieuxRallye = [
   { numero: 1, nom: "Office de tourisme Saint-Martin", lat: 46.205735, lng: -1.365491 },
@@ -21,6 +22,68 @@ const lieuxRallye = [
   { numero: 15, nom: "Port de Saint-Martin", lat: 46.206432, lng: -1.367857 },
   { numero: 16, nom: "Office de tourisme – arrivée", lat: 46.205735, lng: -1.365491 }
 ]
+
+async function chargerItineraireCyclable() {
+  const points = lieuxRallye.map(lieu => [lieu.lat, lieu.lng])
+
+  const parametres = new URLSearchParams({
+    lonlats: lieuxRallye
+      .map(lieu => `${lieu.lng},${lieu.lat}`)
+      .join("|"),
+    nogos: "",
+    profile: "trekking",
+    alternativeidx: "0",
+    format: "geojson"
+  })
+
+  try {
+    const reponse = await fetch(
+      `https://brouter.de/brouter?${parametres.toString()}`
+    )
+
+    if (!reponse.ok) {
+      throw new Error("Le calcul de l'itinéraire a échoué.")
+    }
+
+    const donnees = await reponse.json()
+
+    const nouvelleTrace = window.L.geoJSON(donnees, {
+      style: {
+        color: "#174D36",
+        weight: 5,
+        opacity: 0.9
+      }
+    })
+
+    if (!nouvelleTrace.getLayers().length) {
+      throw new Error("Aucun itinéraire cyclable reçu.")
+    }
+
+    if (traceItineraire) {
+      carte.removeLayer(traceItineraire)
+    }
+
+    traceItineraire = nouvelleTrace.addTo(carte)
+
+    carte.fitBounds(traceItineraire.getBounds(), {
+      padding: [25, 25]
+    })
+
+    console.log("Itinéraire cyclable chargé.")
+
+  } catch (erreur) {
+    console.error("Erreur itinéraire cyclable :", erreur)
+
+    window.L.polyline(points, {
+      color: "#174D36",
+      weight: 4,
+      opacity: 0.7,
+      dashArray: "8, 8"
+    }).addTo(carte)
+
+    console.warn("Affichage provisoire en lignes droites.")
+  }
+}
 
 export function initialiserCarteRallye() {
   const conteneur = document.getElementById("carte-rallye")
@@ -57,8 +120,6 @@ export function initialiserCarteRallye() {
     }
   ).addTo(carte)
 
-  const points = []
-
   lieuxRallye.forEach(lieu => {
     const position = [lieu.lat, lieu.lng]
 
@@ -67,20 +128,14 @@ export function initialiserCarteRallye() {
       .bindPopup(
         `<strong>Étape ${lieu.numero}</strong><br>${lieu.nom}`
       )
-
-    points.push(position)
   })
 
-  window.L.polyline(points, {
-    color: "#174D36",
-    weight: 4,
-    opacity: 0.8,
-    dashArray: "8, 8"
-  }).addTo(carte)
+  carte.fitBounds(
+    lieuxRallye.map(lieu => [lieu.lat, lieu.lng]),
+    { padding: [25, 25] }
+  )
 
-  carte.fitBounds(points, {
-    padding: [25, 25]
-  })
+  chargerItineraireCyclable()
 
   setTimeout(() => {
     if (carte) carte.invalidateSize()
@@ -103,3 +158,4 @@ export function actualiserPositionCarte(latitude, longitude) {
     marqueurPosition.setLatLng(position)
   }
 }
+
