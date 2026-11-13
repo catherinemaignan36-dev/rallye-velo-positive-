@@ -69,7 +69,7 @@ async function chargerItineraireCyclable() {
 
     const proprietes = donnees.features?.[0]?.properties || {}
 
-    instructionsNavigation = proprietes["messages"] || []
+    instructionsNavigation = proprietes["voicehints"] || []
 
     console.log("Itinéraire cyclable chargé.")
     console.log("Données de navigation :", proprietes)
