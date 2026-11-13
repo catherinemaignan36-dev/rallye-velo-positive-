@@ -3,6 +3,7 @@ let carte = null
 let marqueurPosition = null
 let iconeVelo = null
 let traceItineraire = null
+let instructionsNavigation = []
 
 const lieuxRallye = [
   { numero: 1, nom: "Office de tourisme Saint-Martin", lat: 46.205735, lng: -1.365491 },
@@ -33,7 +34,8 @@ async function chargerItineraireCyclable() {
     nogos: "",
     profile: "trekking",
     alternativeidx: "0",
-    format: "geojson"
+    format: "geojson",
+    timode: "3"
   })
 
   try {
@@ -65,11 +67,17 @@ async function chargerItineraireCyclable() {
 
     traceItineraire = nouvelleTrace.addTo(carte)
 
+    const proprietes = donnees.features?.[0]?.properties || {}
+
+    instructionsNavigation = proprietes["messages"] || []
+
+    console.log("Itinéraire cyclable chargé.")
+    console.log("Données de navigation :", proprietes)
+    console.log("Instructions :", instructionsNavigation)
+
     carte.fitBounds(traceItineraire.getBounds(), {
       padding: [25, 25]
     })
-
-    console.log("Itinéraire cyclable chargé.")
 
   } catch (erreur) {
     console.error("Erreur itinéraire cyclable :", erreur)
@@ -158,4 +166,5 @@ export function actualiserPositionCarte(latitude, longitude) {
     marqueurPosition.setLatLng(position)
   }
 }
+
 
