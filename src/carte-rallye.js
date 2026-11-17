@@ -1,7 +1,9 @@
 
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+
 let carte = null
 let marqueurPosition = null
-let iconeVelo = null
 let traceItineraire = null
 let instructionsNavigation = []
 
@@ -24,18 +26,107 @@ const lieuxRallye = [
   { numero: 16, nom: "Office de tourisme – arrivée", lat: 46.205735, lng: -1.365491 }
 ]
 
-async function chargerItineraireCyclable() {
-  const points = lieuxRallye.map(lieu => [lieu.lat, lieu.lng])
+const STYLE_CARTE = 'https://tiles.openfreemap.org/styles/liberty'
+const SOURCE_ITINERAIRE = 'itineraire-rallye'
 
+function creerMarqueurEtape(numero) {
+  const element = document.createElement('div')
+
+  element.style.cssText = `
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #174D36;
+    color: white;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 13px;
+  `
+
+  element.textContent = numero
+
+  return element
+}
+
+function creerMarqueurVelo() {
+  const element = document.createElement('div')
+
+  element.innerHTML = `
+    <div style="
+      font-size: 32px;
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,.4));
+    ">🚴</div>
+  `
+
+  return element
+}
+
+function afficherItineraire(donnees) {
+  if (!carte || !carte.isStyleLoaded()) return
+
+  if (carte.getLayer('ligne-itineraire')) {
+    carte.removeLayer('ligne-itineraire')
+  }
+
+  if (carte.getSource(SOURCE_ITINERAIRE)) {
+    carte.removeSource(SOURCE_ITINERAIRE)
+  }
+
+  carte.addSource(SOURCE_ITINERAIRE, {
+    type: 'geojson',
+    data: donnees
+  })
+
+  carte.addLayer({
+    id: 'ligne-itineraire',
+    type: 'line',
+    source: SOURCE_ITINERAIRE,
+    layout: {
+      'line-join': 'round',
+      'line-cap': 'round'
+    },
+    paint: {
+      'line-color': '#174D36',
+      'line-width': 5,
+      'line-opacity': 0.9
+    }
+  })
+
+  traceItineraire = donnees
+
+  const coordonnees = donnees.features?.[0]?.geometry?.coordinates
+
+  if (coordonnees?.length) {
+    const limites = new maplibregl.LngLatBounds()
+
+    coordonnees.forEach(point => limites.extend(point))
+
+    carte.fitBounds(limites, {
+      padding: 35,
+      maxZoom: 14,
+      duration: 1000
+    })
+  }
+}
+
+async function chargerItineraireCyclable() {
   const parametres = new URLSearchParams({
     lonlats: lieuxRallye
       .map(lieu => `${lieu.lng},${lieu.lat}`)
-      .join("|"),
-    nogos: "",
-    profile: "trekking",
-    alternativeidx: "0",
-    format: "geojson",
-    timode: "3"
+      .join('|'),
+    profile: 'trekking',
+    alternativeidx: '0',
+    format: 'geojson',
+    timode: '3'
   })
 
   try {
@@ -44,126 +135,146 @@ async function chargerItineraireCyclable() {
     )
 
     if (!reponse.ok) {
-      throw new Error("Le calcul de l'itinéraire a échoué.")
+      throw new Error('Calcul de l’itinéraire impossible.')
     }
 
     const donnees = await reponse.json()
 
-    const nouvelleTrace = window.L.geoJSON(donnees, {
-      style: {
-        color: "#174D36",
-        weight: 5,
-        opacity: 0.9
-      }
-    })
-
-    if (!nouvelleTrace.getLayers().length) {
-      throw new Error("Aucun itinéraire cyclable reçu.")
+    if (!donnees.features?.length) {
+      throw new Error('Aucun itinéraire reçu.')
     }
 
-    if (traceItineraire) {
-      carte.removeLayer(traceItineraire)
-    }
+    instructionsNavigation =
+      donnees.features[0].properties?.voicehints || []
 
-    traceItineraire = nouvelleTrace.addTo(carte)
+    afficherItineraire(donnees)
 
-    const proprietes = donnees.features?.[0]?.properties || {}
-
-    instructionsNavigation = proprietes["voicehints"] || []
-
-    console.log("Itinéraire cyclable chargé.")
-    console.log("Données de navigation :", proprietes)
-    console.log("Instructions :", instructionsNavigation)
-
-    carte.fitBounds(traceItineraire.getBounds(), {
-      padding: [25, 25]
-    })
+    console.log('Itinéraire cyclable chargé.')
+    console.log('Instructions :', instructionsNavigation)
 
   } catch (erreur) {
-    console.error("Erreur itinéraire cyclable :", erreur)
+    console.error('Erreur itinéraire :', erreur)
 
-    window.L.polyline(points, {
-      color: "#174D36",
-      weight: 4,
-      opacity: 0.7,
-      dashArray: "8, 8"
-    }).addTo(carte)
+    const ligneSecours = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: lieuxRallye.map(lieu => [
+            lieu.lng,
+            lieu.lat
+          ])
+        }
+      }]
+    }
 
-    console.warn("Affichage provisoire en lignes droites.")
+    afficherItineraire(ligneSecours)
+
+    console.warn('Affichage provisoire en lignes droites.')
   }
 }
 
 export function initialiserCarteRallye() {
-  const conteneur = document.getElementById("carte-rallye")
+  const conteneur = document.getElementById('carte-rallye')
 
   if (!conteneur) return
 
-  if (!window.L) {
-    conteneur.innerHTML =
-      "<p>La carte ne peut pas charger. Vérifiez votre connexion.</p>"
-    return
-  }
-
-  iconeVelo = window.L.divIcon({
-    className: "icone-velo-rallye",
-    html: '<div style="font-size:30px; line-height:36px;">🚴</div>',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
-  })
-
   if (carte) {
-    setTimeout(() => carte.invalidateSize(), 300)
+    carte.resize()
     return
   }
 
-  carte = window.L.map(conteneur, {
-    scrollWheelZoom: false
-  }).setView([46.205, -1.400], 12)
+  conteneur.innerHTML = ''
 
-  window.L.tileLayer(
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    {
-      attribution: "&copy; OpenStreetMap contributors",
-      maxZoom: 19
-    }
-  ).addTo(carte)
+  try {
+    carte = new maplibregl.Map({
+      container: conteneur,
+      style: STYLE_CARTE,
+      center: [-1.400, 46.205],
+      zoom: 11.5,
+      attributionControl: true
+    })
 
-  lieuxRallye.forEach(lieu => {
-    const position = [lieu.lat, lieu.lng]
+    carte.addControl(
+      new maplibregl.NavigationControl(),
+      'top-right'
+    )
 
-    window.L.marker(position)
-      .addTo(carte)
-      .bindPopup(
-        `<strong>Étape ${lieu.numero}</strong><br>${lieu.nom}`
-      )
-  })
+    carte.addControl(
+      new maplibregl.ScaleControl(),
+      'bottom-left'
+    )
 
-  carte.fitBounds(
-    lieuxRallye.map(lieu => [lieu.lat, lieu.lng]),
-    { padding: [25, 25] }
-  )
+    carte.on('load', async () => {
+      lieuxRallye.forEach(lieu => {
+        const popup = new maplibregl.Popup({
+          offset: 20
+        }).setHTML(
+          `<strong>Étape ${lieu.numero}</strong><br>${lieu.nom}`
+        )
 
-  chargerItineraireCyclable()
+        new maplibregl.Marker({
+          element: creerMarqueurEtape(lieu.numero),
+          anchor: 'center'
+        })
+          .setLngLat([lieu.lng, lieu.lat])
+          .setPopup(popup)
+          .addTo(carte)
+      })
 
-  setTimeout(() => {
-    if (carte) carte.invalidateSize()
-  }, 500)
+      const limites = new maplibregl.LngLatBounds()
+
+      lieuxRallye.forEach(lieu => {
+        limites.extend([lieu.lng, lieu.lat])
+      })
+
+      carte.fitBounds(limites, {
+        padding: 35,
+        maxZoom: 13
+      })
+
+      await chargerItineraireCyclable()
+    })
+
+    carte.on('error', evenement => {
+      console.error('Erreur MapLibre :', evenement.error)
+    })
+
+    setTimeout(() => {
+      if (carte) carte.resize()
+    }, 500)
+
+  } catch (erreur) {
+    console.error('Erreur initialisation carte :', erreur)
+
+    conteneur.innerHTML =
+      '<p>Impossible de charger la carte. Vérifiez votre connexion.</p>'
+  }
 }
 
 export function actualiserPositionCarte(latitude, longitude) {
-  if (!carte || !window.L) return
+  if (!carte || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return
+  }
 
-  const position = [latitude, longitude]
+  const position = [longitude, latitude]
 
   if (!marqueurPosition) {
-    marqueurPosition = window.L.marker(position, {
-      icon: iconeVelo,
-      zIndexOffset: 1000
-    }).addTo(carte)
+    marqueurPosition = new maplibregl.Marker({
+      element: creerMarqueurVelo(),
+      anchor: 'center'
+    })
+      .setLngLat(position)
+      .setPopup(
+        new maplibregl.Popup({ offset: 20 })
+          .setText('Votre position')
+      )
+      .addTo(carte)
 
-    marqueurPosition.bindPopup("Votre position")
   } else {
-    marqueurPosition.setLatLng(position)
+    marqueurPosition.setLngLat(position)
   }
 }
 
