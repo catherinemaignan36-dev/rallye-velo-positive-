@@ -13,9 +13,13 @@
   --fond: #f5f7f3;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   margin: 0;
@@ -23,9 +27,19 @@ body {
   background: var(--fond);
 }
 
-button, input, select { font: inherit; }
-button { cursor: pointer; }
-[hidden] { display: none !important; }
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+[hidden] {
+  display: none !important;
+}
 
 .application {
   width: 100%;
@@ -94,7 +108,8 @@ button { cursor: pointer; }
   z-index: 1;
 }
 
-.etiquette, .surtitre {
+.etiquette,
+.surtitre {
   display: inline-block;
   font-size: 10px;
   font-weight: 700;
@@ -155,7 +170,9 @@ button { cursor: pointer; }
   background: white;
 }
 
-.hero .bouton-principal:hover { background: #edf3ee; }
+.hero .bouton-principal:hover {
+  background: #edf3ee;
+}
 
 .hero-infos {
   margin-top: 32px;
@@ -177,9 +194,12 @@ button { cursor: pointer; }
   text-align: center;
 }
 
-.surtitre { color: #78917f; }
+.surtitre {
+  color: #78917f;
+}
 
-.presentation h2, .panneau h2 {
+.presentation h2,
+.panneau h2 {
   margin: 13px 0;
   color: var(--vert);
   font-family: 'Playfair Display', Georgia, serif;
@@ -255,7 +275,9 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 
-.panneau form { margin-top: 28px; }
+.panneau form {
+  margin-top: 28px;
+}
 
 .panneau label {
   display: block;
@@ -277,7 +299,8 @@ button { cursor: pointer; }
   background: #fbfcfa;
 }
 
-.panneau input:focus, .panneau select:focus {
+.panneau input:focus,
+.panneau select:focus {
   border-color: var(--vert);
   box-shadow: 0 0 0 3px rgba(23, 77, 54, .09);
 }
@@ -311,7 +334,9 @@ button { cursor: pointer; }
   font-size: 28px;
 }
 
-.prix-equipe small { color: #6f8173; }
+.prix-equipe small {
+  color: #6f8173;
+}
 
 .separateur-equipe {
   margin: 25px 0;
@@ -323,7 +348,8 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 
-.separateur-equipe::before, .separateur-equipe::after {
+.separateur-equipe::before,
+.separateur-equipe::after {
   content: '';
   height: 1px;
   flex: 1;
@@ -341,7 +367,9 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 
-.bouton-secondaire:hover { background: var(--vert-clair); }
+.bouton-secondaire:hover {
+  background: var(--vert-clair);
+}
 
 .code-equipe {
   text-align: center;
@@ -351,7 +379,9 @@ button { cursor: pointer; }
   font-weight: 700;
 }
 
-.panneau-bienvenue { width: min(760px, calc(100% - 32px)); }
+.panneau-bienvenue {
+  width: min(760px, calc(100% - 32px));
+}
 
 .panneau-bienvenue h3 {
   margin: 28px 0 8px;
@@ -360,7 +390,9 @@ button { cursor: pointer; }
   font-size: 22px;
 }
 
-.texte-bienvenue { font-size: 16px; }
+.texte-bienvenue {
+  font-size: 16px;
+}
 
 .separateur-bienvenue {
   height: 1px;
@@ -415,7 +447,9 @@ button { cursor: pointer; }
   background: #edf3ee;
 }
 
-.rappel-securite strong { color: var(--vert); }
+.rappel-securite strong {
+  color: var(--vert);
+}
 
 .rappel-securite p {
   margin-bottom: 0;
@@ -431,7 +465,9 @@ button { cursor: pointer; }
   border-radius: 7px;
 }
 
-.bloc-localisation h3 { margin-top: 0; }
+.bloc-localisation h3 {
+  margin-top: 0;
+}
 
 .bloc-localisation p {
   color: #718076;
@@ -454,13 +490,15 @@ button { cursor: pointer; }
   accent-color: var(--vert);
 }
 
-.panneau-bienvenue > .bouton-principal { width: 100%; }
+.panneau-bienvenue > .bouton-principal {
+  width: 100%;
+}
 
 /* ÉCRAN DES ÉTAPES : photo visible en arrière-plan */
 .panneau-etape {
   width: min(760px, calc(100% - 32px));
   padding: 30px;
-  border: 1px solid rgba(255,255,255,.7);
+  border: 1px solid rgba(255, 255, 255, .7);
   background:
     linear-gradient(
       rgba(245, 247, 243, .62),
@@ -476,12 +514,12 @@ button { cursor: pointer; }
 
 .panneau-etape h2 {
   margin: 10px 0;
-  text-shadow: 0 1px 3px rgba(255,255,255,.5);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, .5);
 }
 
 .panneau-etape > p:not(.surtitre) {
   line-height: 1.7;
-  text-shadow: 0 1px 3px rgba(255,255,255,.6);
+  text-shadow: 0 1px 3px rgba(255, 255, 255, .6);
 }
 
 .progression {
@@ -526,7 +564,7 @@ button { cursor: pointer; }
 .lieu-etape {
   margin: 25px 0;
   padding: 17px;
-  border: 1px solid rgba(223,232,223,.9);
+  border: 1px solid rgba(223, 232, 223, .9);
   border-radius: 7px;
   display: flex;
   align-items: center;
@@ -558,10 +596,11 @@ button { cursor: pointer; }
   font-size: 13px;
 }
 
-.consigne-etape, .bloc-enigme {
+.consigne-etape,
+.bloc-enigme {
   margin-top: 25px;
   padding: 23px;
-  border: 1px solid rgba(225,233,225,.95);
+  border: 1px solid rgba(225, 233, 225, .95);
   border-radius: 8px;
   background: rgba(255, 255, 255, .94);
   box-shadow: 0 5px 18px rgba(30, 60, 40, .05);
@@ -584,7 +623,9 @@ button { cursor: pointer; }
   color: var(--vert);
 }
 
-#distance-gps { font-size: 12px; }
+#distance-gps {
+  font-size: 12px;
+}
 
 .bloc-enigme h3 {
   margin: 8px 0;
@@ -598,14 +639,19 @@ button { cursor: pointer; }
   line-height: 1.8;
 }
 
-.bloc-enigme form { margin-top: 22px; }
+.bloc-enigme form {
+  margin-top: 22px;
+}
 
-.bloc-enigme .bouton-principal, #etape-suivante {
+.bloc-enigme .bouton-principal,
+#etape-suivante {
   width: 100%;
   margin-top: 20px;
 }
 
-#zone-photo { margin-top: 20px; }
+#zone-photo {
+  margin-top: 20px;
+}
 
 #zone-photo input[type="file"] {
   width: 100%;
@@ -680,15 +726,22 @@ footer p {
     background-position: 57% center;
   }
 
-  .hero h1 { font-size: 43px; }
-  .hero-contenu > p { font-size: 14px; }
+  .hero h1 {
+    font-size: 43px;
+  }
+
+  .hero-contenu > p {
+    font-size: 14px;
+  }
 
   .hero-infos {
     gap: 12px;
     font-size: 10px;
   }
 
-  .presentation { padding: 60px 22px; }
+  .presentation {
+    padding: 60px 22px;
+  }
 
   .cartes-avantages {
     grid-template-columns: 1fr;
@@ -696,7 +749,9 @@ footer p {
     margin-top: 30px;
   }
 
-  .carte { padding: 22px; }
+  .carte {
+    padding: 22px;
+  }
 
   .panneau {
     margin: 22px auto 45px;
@@ -708,20 +763,51 @@ footer p {
     background-attachment: scroll;
   }
 
-  .consigne-etape, .bloc-enigme { padding: 18px; }
-  .panneau-etape h2 { font-size: 31px; }
+  .consigne-etape,
+  .bloc-enigme {
+    padding: 18px;
+  }
+
+  .panneau-etape h2 {
+    font-size: 31px;
+  }
 }
+
+/* CARTE MAPLIBRE */
 .carte-rallye {
+  position: relative;
   width: 100%;
-  height: 320px;
+  height: 420px;
   min-height: 320px;
   margin: 20px 0;
   border-radius: 16px;
   overflow: hidden;
-  background: #f1f1f1;
+  background: #e8efe9;
 }
 
-.carte-rallye p {
-  padding: 16px;
+.carte-rallye .maplibregl-map {
+  width: 100%;
+  height: 100%;
+  font-family: 'DM Sans', Arial, sans-serif;
+}
+
+.carte-rallye .maplibregl-canvas {
+  outline: none;
+}
+
+.carte-rallye .maplibregl-ctrl-group {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.carte-rallye .maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
+@media (max-width: 650px) {
+  .carte-rallye {
+    height: 360px;
+    min-height: 320px;
+  }
 }
 
