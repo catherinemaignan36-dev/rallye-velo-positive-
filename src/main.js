@@ -1,6 +1,8 @@
 import './style.css'
 import { supabase } from './supabase.js'
 import { initialiserCarteRallye, actualiserPositionCarte } from './carte-rallye.js'
+import { initialiserGestionEtapes } from './admin-etapes.js'
+
 const app = document.querySelector('#app')
 
 if (!app) {
@@ -104,9 +106,10 @@ app.innerHTML = `
       <button type="submit" class="bouton-principal">Continuer <span>→</span></button>
     </form>
     <p id="message-creation" role="status"></p>
-    <div class="separateur-equipe">OU</div>
+    
     <button id="ouvrir-code" class="bouton-secondaire">J'ai déjà un code équipe</button>
-  </section>
+    </section>
+ 
 
   <section id="rejoindre" class="panneau" hidden>
     <button class="bouton-retour" id="retour-creation">← Retour</button>
@@ -114,7 +117,7 @@ app.innerHTML = `
     <p>Saisissez le code reçu pour retrouver votre aventure.</p>
     <form id="form-code">
       <label for="code-equipe">Votre code équipe</label>
-      <input id="code-equipe" class="code-equipe" type="text" maxlength="6" minlength="6" placeholder="EX : A7K9P2" autocomplete="off" required>
+      <input id="code-equipe" class="code-equipe" type="text" maxlength="20" minlength="6" placeholder="Votre code équipe" autocomplete="off" required>
       <button type="submit" class="bouton-principal">Valider mon code <span>→</span></button>
     </form>
     <p id="message-code" role="status"></p>
@@ -153,15 +156,24 @@ app.innerHTML = `
 
   <section id="ecran-etape" class="panneau panneau-etape" hidden>
     <button id="retour-accueil-etape" class="bouton-retour">← Quitter l'étape</button>
+    <a href="tel:+33676915145"
+   style="display:block;text-align:center;margin:15px 0;padding:15px;background:#A33A32;color:white;border-radius:12px;text-decoration:none;font-weight:bold;">
+  Besoin d’aide ? Appeler l’organisatrice
+  <br>06 76 91 51 45
+</a>
     <p id="equipe-bienvenue" class="surtitre"></p>
     <div class="progression"><span>VOTRE PARCOURS</span><strong id="compteur-etape"></strong></div>
     <div class="barre-progression"><div id="barre-etape"></div></div>
     <span id="numero-etape" class="numero-etape"></span>
     <h2 id="titre-etape"></h2><p id="intro-etape"></p>
     <div class="lieu-etape"><span id="picto-etape" class="lieu-picto"></span><div><strong id="libelle-lieu">Votre destination</strong><p id="nom-lieu"></p></div></div>
-    <div id="carte-rallye" class="carte-rallye">
-  <p>Chargement de la carte...</p>
+    <div id="navigation-rallye">
+  <p>En attente du GPS…</p>
 </div>
+    <div id="carte-rallye" class="carte-rallye">
+  <p>Chargement de la carte du Rallye Vélo Positive...</p>
+</div>
+   
     <div id="attente-gps" class="consigne-etape">
       <strong>Étape encore verrouillée</strong>
       <p>Rejoignez ce lieu à vélo. L'énigme se débloquera lorsque vous serez à moins de 60 mètres.</p>
@@ -182,6 +194,9 @@ app.innerHTML = `
         <img id="apercu-photo" alt="Aperçu de votre photo" hidden>
       </div>
       <p id="message-reponse" role="status"></p>
+      <button type="button" id="passer-etape" class="bouton-secondaire">
+  Voir la solution et passer cette étape
+</button>
       <p id="indice-etape" class="indice" hidden></p>
       <button id="etape-suivante" class="bouton-principal" hidden>Continuer vers la prochaine étape <span>→</span></button>
     </div>
@@ -206,24 +221,57 @@ app.innerHTML = `
     <p id="admin-message" role="status"></p>
   </section>
 
-  <section id="admin-tableau" class="panneau" hidden>
-    <div class="admin-entete">
-      <div><p class="surtitre">ESPACE PRIVÉ</p><h2>Tableau de bord</h2></div>
-      <button id="admin-deconnexion" class="bouton-secondaire">Déconnexion</button>
-    </div>
-    <p>Suivez les équipes et gérez leur progression.</p>
-    <button id="actualiser-equipes" class="bouton-principal">Actualiser les équipes</button>
-    <p id="admin-liste-message" role="status"></p>
-    <div id="liste-equipes"></div>
-  </section>
+  
+<section id="admin-tableau" class="panneau" hidden>
+<div class="admin-entete">
+  <div><p class="surtitre">ESPACE PRIVÉ</p><h2>Tableau de bord</h2></div>
+  <button id="admin-deconnexion" class="bouton-secondaire">Déconnexion</button>
+</div>
 
-  <footer><strong>RALLYE VÉLO POSITIVE</strong><p>Une autre façon de découvrir l'Île de Ré.</p></footer>
+<h3>Créer un rallye</h3>
+<p>Créez un nouveau parcours pour vos participants.</p>
+
+<form id="form-creer-rallye">
+  <label for="rallye-nom">Nom du rallye</label>
+  <input
+    type="text"
+    id="rallye-nom"
+    placeholder="Ex. Rallye EVJF"
+    required
+  >
+
+  <label for="rallye-description">Description</label>
+  <textarea
+    id="rallye-description"
+    placeholder="Décrivez ce rallye..."
+    rows="3"
+  ></textarea>
+
+  <button type="submit" class="bouton-principal">
+    Créer le rallye
+  </button>
+  <p id="rallye-message" role="status"></p>
+</form>
+
+<div id="liste-rallyes"></div>
+
+<hr>
+
+<h3>Gestion des équipes</h3>
+<p>Suivez les équipes et gérez leur progression.</p>
+<button id="actualiser-equipes" class="bouton-principal">Actualiser les équipes</button>
+<p id="admin-liste-message" role="status"></p>
+<div id="liste-equipes"></div>
+</section>
+
+<footer><strong>RALLYE VÉLO POSITIVE</strong><p>Une autre façon de découvrir l'Île de Ré.</p></footer>
 </main>
 `
 
 // --------------------------------------------------
 // ÉTAT DE L'APPLICATION
 // --------------------------------------------------
+
 
 const $ = selector => document.querySelector(selector)
 
@@ -509,9 +557,11 @@ $('#form-code').addEventListener('submit', async event => {
 
   const code = $('#code-equipe').value.trim().toUpperCase()
 
-  if (code.length !== 6) {
-    $('#message-code').textContent = 'Votre code doit contenir 6 caractères.'
+  if (code.length < 6 || code.length > 20) {
+    $('#message-code').textContent =
+      'Votre code doit contenir entre 6 et 20 caractères.'
     return
+  
   }
 
   const bouton = $('#form-code button[type="submit"]')
@@ -680,6 +730,8 @@ function afficherEtape(index) {
   $('#indice-etape').hidden = true
   $('#indice-etape').textContent = ''
   $('#etape-suivante').hidden = true
+  $('#passer-etape').hidden = false
+  $('#passer-etape').disabled = false
 
   $('#form-reponse-etape').hidden = false
   $('#reponse-etape').value = ''
@@ -709,11 +761,12 @@ function afficherEtape(index) {
   appliquerPhotoEtape(stage.number)
   afficherEcran(ecranEtape)
   initialiserCarteRallye()
+
   if (index === 0) {
     debloquerEtape()
-  } else {
-    demarrerSuiviGPS()
   }
+
+  demarrerSuiviGPS()
 }
 
 function debloquerEtape() {
@@ -726,7 +779,7 @@ function debloquerEtape() {
     'Vous êtes au bon endroit. Le défi est débloqué !'
   $('#message-reponse').style.color = '#174D36'
 
-  arreterSuiviGPS()
+  
 }
 
 function demarrerSuiviGPS() {
@@ -747,7 +800,8 @@ function demarrerSuiviGPS() {
       localisationAutorisee = true
 
       const { latitude, longitude, accuracy } = position.coords
-actualiserPositionCarte(latitude, longitude)
+      actualiserPositionCarte(latitude, longitude, position.coords.heading)
+
       const distance = calculerDistanceMetres(
         latitude,
         longitude,
@@ -790,17 +844,20 @@ actualiserPositionCarte(latitude, longitude)
       }
 
       $('#message-gps').textContent =
-        messages[erreur.code] ||
-        'Impossible de récupérer votre position. Vérifiez les réglages GPS.'
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 20000,
-      maximumAge: 0
-    }
-  )
+      messages[erreur.code] ||
+      'Impossible de récupérer votre position. Vérifiez les réglages GPS.'
+  },
+  {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 5000
+  }
+)
 }
 
+// --------------------------------------------------
+// PHOTOS DES ÉTAPES 7 ET 15
+// --------------------------------------------------
 // --------------------------------------------------
 // PHOTOS DES ÉTAPES 7 ET 15
 // --------------------------------------------------
@@ -968,7 +1025,57 @@ $('#form-reponse-etape').addEventListener('submit', async event => {
     bouton.innerHTML = 'Valider ma réponse <span>→</span>'
   }
 })
+$('#passer-etape').addEventListener('click', async () => {
+  const bouton = $('#passer-etape')
+  const message = $('#message-reponse')
+  const stage = stages[etapeActuelle]
 
+  if (!stage || !jetonEquipe || !etapeDebloquee) return
+
+  if (!confirm('Voulez-vous afficher la solution et passer cette étape ?')) return
+
+  bouton.disabled = true
+  bouton.textContent = 'Passage en cours...'
+
+  try {
+    const { data, error } = await supabase.rpc('passer_etape_equipe', {
+      p_jeton: jetonEquipe,
+      p_etape: stage.number
+    })
+
+    if (error) throw error
+
+    const resultat = extraireResultat(data)
+
+    if (!resultat?.succes) {
+      throw new Error(resultat?.message || 'Impossible de passer cette étape.')
+    }
+
+    message.textContent = `Solution : ${resultat.solution || 'Étape passée.'}`
+    message.style.color = '#174D36'
+
+    $('#form-reponse-etape').hidden = true
+    $('#indice-etape').hidden = true
+    arreterSuiviGPS()
+
+    if (stage.finish) {
+      $('#fin-rallye').hidden = false
+    } else {
+      $('#etape-suivante').hidden = false
+      $('#etape-suivante').textContent =
+        `Continuer vers l'étape ${stage.number + 1} →`
+    }
+
+    bouton.hidden = true
+
+  } catch (erreur) {
+    message.textContent = afficherErreur('Impossible de passer cette étape.', erreur)
+    message.style.color = '#A33A32'
+  } finally {
+    bouton.disabled = false
+    bouton.textContent = 'Voir la solution et passer cette étape'
+  }
+})
 $('#etape-suivante').addEventListener('click', () => {
   if (etapeActuelle < stages.length - 1) {
     afficherEtape(etapeActuelle + 1)
@@ -1004,9 +1111,10 @@ $('#ouvrir-administration').addEventListener('click', async () => {
       .eq('user_id', session.user.id)
       .maybeSingle()
 
-    if (admin) {
+  if (admin) {
       afficherEcran(adminTableau)
-      await chargerEquipes()
+    await chargerRallyes()
+    await chargerEquipes()
       return
     }
 
@@ -1056,16 +1164,119 @@ $('#form-admin').addEventListener('submit', async event => {
     }
 
     afficherEcran(adminTableau)
+    await chargerRallyes()
     await chargerEquipes()
 
   } catch (erreur) {
     message.textContent = afficherErreur(
       'Connexion impossible.',
       erreur
+    
     )
   } finally {
     bouton.disabled = false
     bouton.textContent = 'Se connecter'
+  }
+})
+
+async function chargerRallyes() {
+  const liste = $('#liste-rallyes')
+  const message = $('#rallye-message')
+
+  liste.innerHTML = ''
+  message.textContent = 'Chargement des rallyes...'
+
+  const { data: rallyes, error } = await supabase
+    .from('rallyes')
+    .select('id, nom, description, actif')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    message.textContent = `Impossible de charger les rallyes : ${error.message}`
+    return
+  }
+
+  if (!rallyes || rallyes.length === 0) {
+    message.textContent = 'Aucun rallye enregistré.'
+    return
+  }
+
+  message.textContent = `${rallyes.length} rallye(s) enregistré(s).`
+
+  rallyes.forEach(rallye => {
+    const carte = document.createElement('article')
+    carte.className = 'carte admin-carte'
+
+    const titre = document.createElement('h4')
+    titre.textContent = rallye.nom
+
+    const description = document.createElement('p')
+    description.textContent = rallye.description || 'Aucune description.'
+
+    const statut = document.createElement('p')
+    statut.textContent = rallye.actif ? 'Rallye actif' : 'Rallye inactif'
+
+    carte.append(titre, description, statut)
+
+carte.style.cursor = 'pointer'
+carte.setAttribute('role', 'button')
+carte.setAttribute('tabindex', '0')
+carte.title = 'Cliquer pour gérer les étapes de ce rallye'
+
+carte.addEventListener('click', () => {
+  gestionEtapes.selectionnerRallye(rallye.id, rallye.nom)
+})
+
+carte.addEventListener('keydown', event => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    gestionEtapes.selectionnerRallye(rallye.id, rallye.nom)
+  }
+})
+
+liste.appendChild(carte)
+  })
+}
+
+$('#form-creer-rallye').addEventListener('submit', async event => {
+  event.preventDefault()
+
+  const nom = $('#rallye-nom').value.trim()
+  const description = $('#rallye-description').value.trim()
+  const bouton = $('#form-creer-rallye button[type="submit"]')
+  const message = $('#rallye-message')
+
+  if (nom.length < 2) {
+    message.textContent = 'Le nom doit contenir au moins 2 caractères.'
+    return
+  }
+
+  bouton.disabled = true
+  bouton.textContent = 'Création en cours...'
+  message.textContent = ''
+
+  try {
+    const { error } = await supabase
+      .from('rallyes')
+      .insert({
+        nom,
+        description: description || null
+      })
+
+    if (error) throw error
+
+    $('#form-creer-rallye').reset()
+    message.textContent = `Le rallye « ${nom} » a bien été créé.`
+
+    await chargerRallyes()
+
+  } catch (erreur) {
+    message.textContent = erreur.code === '23505'
+      ? 'Un rallye porte déjà ce nom.'
+      : `Erreur lors de la création : ${erreur.message}`
+  } finally {
+    bouton.disabled = false
+    bouton.textContent = 'Créer le rallye'
   }
 })
 
@@ -1328,10 +1539,12 @@ $('#admin-deconnexion').addEventListener('click', async () => {
 // --------------------------------------------------
 // DÉMARRAGE
 // --------------------------------------------------
-
+const gestionEtapes = initialiserGestionEtapes({
+  supabase,
+  stages,
+  photosEtapes
+})
 verifierRetourPaiement()
-
-
 
 
 
