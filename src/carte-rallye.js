@@ -1,6 +1,10 @@
 
 import * as maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+
+// Configuration du Worker obligatoire avec MapLibre 6 et Vite
+maplibregl.setWorkerUrl(workerUrl)
 
 let carte = null
 let marqueurPosition = null
@@ -48,7 +52,6 @@ function creerMarqueurEtape(numero) {
   `
 
   element.textContent = numero
-
   return element
 }
 
@@ -123,7 +126,7 @@ async function chargerItineraireCyclable() {
     lonlats: lieuxRallye
       .map(lieu => `${lieu.lng},${lieu.lat}`)
       .join('|'),
-    profile: 'trekking',
+    profile: 'fastbike',
     alternativeidx: '0',
     format: 'geojson',
     timode: '3'
@@ -149,7 +152,7 @@ async function chargerItineraireCyclable() {
 
     afficherItineraire(donnees)
 
-    console.log('Itinéraire cyclable chargé.')
+    console.log('Itinéraire vélo chargé.')
     console.log('Instructions :', instructionsNavigation)
 
   } catch (erreur) {
@@ -255,7 +258,11 @@ export function initialiserCarteRallye() {
 }
 
 export function actualiserPositionCarte(latitude, longitude) {
-  if (!carte || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+  if (
+    !carte ||
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude)
+  ) {
     return
   }
 
