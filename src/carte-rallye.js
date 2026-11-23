@@ -1,10 +1,11 @@
 
 import * as maplibregl from 'maplibre-gl'
+import { setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 
-// Configuration du Worker obligatoire avec MapLibre 6 et Vite
-maplibregl.setWorkerUrl(workerUrl)
+// Configuration du Worker MapLibre 6 avec Vite
+setWorkerUrl(workerUrl)
 
 let carte = null
 let marqueurPosition = null
@@ -32,7 +33,9 @@ const lieuxRallye = [
 
 const STYLE_CARTE = 'https://tiles.openfreemap.org/styles/liberty'
 const SOURCE_ITINERAIRE = 'itineraire-rallye'
+const COULEUR_RALLYE = '#174D36'
 
+// Création des marqueurs numérotés
 function creerMarqueurEtape(numero) {
   const element = document.createElement('div')
 
@@ -40,7 +43,7 @@ function creerMarqueurEtape(numero) {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #174D36;
+    background: ${COULEUR_RALLYE};
     color: white;
     border: 3px solid white;
     box-shadow: 0 2px 8px rgba(0,0,0,.35);
@@ -49,12 +52,15 @@ function creerMarqueurEtape(numero) {
     justify-content: center;
     font-weight: bold;
     font-size: 13px;
+    cursor: pointer;
   `
 
-  element.textContent = numero
+  element.textContent = String(numero)
+
   return element
 }
 
+// Création du marqueur de position du participant
 function creerMarqueurVelo() {
   const element = document.createElement('div')
 
@@ -73,6 +79,7 @@ function creerMarqueurVelo() {
   return element
 }
 
+// Affichage du tracé sur la carte
 function afficherItineraire(donnees) {
   if (!carte || !carte.isStyleLoaded()) return
 
@@ -98,7 +105,7 @@ function afficherItineraire(donnees) {
       'line-cap': 'round'
     },
     paint: {
-      'line-color': '#174D36',
+      'line-color': COULEUR_RALLYE,
       'line-width': 5,
       'line-opacity': 0.9
     }
@@ -106,7 +113,8 @@ function afficherItineraire(donnees) {
 
   traceItineraire = donnees
 
-  const coordonnees = donnees.features?.[0]?.geometry?.coordinates
+  const coordonnees =
+    donnees.features?.[0]?.geometry?.coordinates
 
   if (coordonnees?.length) {
     const limites = new maplibregl.LngLatBounds()
@@ -121,6 +129,7 @@ function afficherItineraire(donnees) {
   }
 }
 
+// Calcul du véritable itinéraire cyclable
 async function chargerItineraireCyclable() {
   const parametres = new URLSearchParams({
     lonlats: lieuxRallye
@@ -152,12 +161,13 @@ async function chargerItineraireCyclable() {
 
     afficherItineraire(donnees)
 
-    console.log('Itinéraire vélo chargé.')
+    console.log('Itinéraire cyclable chargé.')
     console.log('Instructions :', instructionsNavigation)
 
   } catch (erreur) {
-    console.error('Erreur itinéraire :', erreur)
+    console.error('Erreur itinéraire BRouter :', erreur)
 
+    // Tracé provisoire si le calcul cyclable échoue
     const ligneSecours = {
       type: 'FeatureCollection',
       features: [{
@@ -175,14 +185,39 @@ async function chargerItineraireCyclable() {
 
     afficherItineraire(ligneSecours)
 
-    console.warn('Affichage provisoire en lignes droites.')
+    console.warn(
+      'Attention : tracé provisoire en lignes droites, pas un itinéraire vélo.'
+    )
   }
 }
 
+// Ajout des 16 étapes sur la carte
+function afficherEtapes() {
+  lieuxRallye.forEach(lieu => {
+    const popup = new maplibregl.Popup({
+      offset: 20
+    }).setHTML(
+      `<strong>Étape ${lieu.numero}</strong><br>${lieu.nom}`
+    )
+
+    new maplibregl.Marker({
+      element: creerMarqueurEtape(lieu.numero),
+      anchor: 'center'
+    })
+      .setLngLat([lieu.lng, lieu.lat])
+      .setPopup(popup)
+      .addTo(carte)
+  })
+}
+
+// Initialisation de la carte
 export function initialiserCarteRallye() {
   const conteneur = document.getElementById('carte-rallye')
 
-  if (!conteneur) return
+  if (!conteneur) {
+    console.error('Conteneur carte-rallye introuvable.')
+    return
+  }
 
   if (carte) {
     carte.resize()
@@ -211,21 +246,9 @@ export function initialiserCarteRallye() {
     )
 
     carte.on('load', async () => {
-      lieuxRallye.forEach(lieu => {
-        const popup = new maplibregl.Popup({
-          offset: 20
-        }).setHTML(
-          `<strong>Étape ${lieu.numero}</strong><br>${lieu.nom}`
-        )
+      console.log('Fond de carte MapLibre chargé.')
 
-        new maplibregl.Marker({
-          element: creerMarqueurEtape(lieu.numero),
-          anchor: 'center'
-        })
-          .setLngLat([lieu.lng, lieu.lat])
-          .setPopup(popup)
-          .addTo(carte)
-      })
+      afficherEtapes()
 
       const limites = new maplibregl.LngLatBounds()
 
@@ -242,7 +265,14 @@ export function initialiserCarteRallye() {
     })
 
     carte.on('error', evenement => {
-      console.error('Erreur MapLibre :', evenement.error)
+      console.error(
+        'Erreur MapLibre :',
+        evenement.error || evenement
+      )
+    })
+
+    carte.on('webglcontextlost', () => {
+      console.error('Le contexte graphique de la carte a été perdu.')
     })
 
     setTimeout(() => {
@@ -257,6 +287,7 @@ export function initialiserCarteRallye() {
   }
 }
 
+// Actualisation de la position GPS du participant
 export function actualiserPositionCarte(latitude, longitude) {
   if (
     !carte ||
@@ -283,5 +314,18 @@ export function actualiserPositionCarte(latitude, longitude) {
   } else {
     marqueurPosition.setLngLat(position)
   }
+}
+
+// Permet de récupérer les étapes et les instructions si nécessaire
+export function obtenirEtapesRallye() {
+  return lieuxRallye
+}
+
+export function obtenirInstructionsNavigation() {
+  return instructionsNavigation
+}
+
+export function obtenirTraceItineraire() {
+  return traceItineraire
 }
 
