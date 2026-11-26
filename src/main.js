@@ -1280,9 +1280,12 @@ $('#form-creer-rallye').addEventListener('submit', async event => {
   }
 })
 
+    
 async function chargerEquipes() {
   const liste = $('#liste-equipes')
   const message = $('#admin-liste-message')
+
+  installerGenerateurCode()
 
   liste.innerHTML = ''
   message.textContent = 'Chargement des équipes...'
@@ -1293,19 +1296,16 @@ async function chargerEquipes() {
     .order('nom_equipe', { ascending: true })
 
   if (error) {
-    message.textContent =
-      `Impossible de charger les équipes : ${error.message}`
+    message.textContent = `Impossible de charger les équipes : ${error.message}`
     return
   }
 
   if (!equipes || equipes.length === 0) {
-    message.textContent =
-      'Aucune équipe enregistrée pour le moment.'
+    message.textContent = 'Aucune équipe enregistrée pour le moment.'
     return
   }
 
-  message.textContent =
-    `${equipes.length} équipe(s) enregistrée(s).`
+  message.textContent = `${equipes.length} équipe(s) enregistrée(s).`
 
   equipes.forEach(equipe => {
     const carte = document.createElement('article')
@@ -1315,16 +1315,13 @@ async function chargerEquipes() {
     titre.textContent = equipe.nom_equipe || 'Équipe sans nom'
 
     const progression = document.createElement('p')
-    progression.textContent =
-      `Progression : étape ${equipe.etape_actuelle || 1} / 16`
+    progression.textContent = `Progression : étape ${equipe.etape_actuelle || 1} / 16`
 
     const paiement = document.createElement('p')
-    paiement.textContent =
-      `Paiement : ${equipe.paiement_valide ? 'validé' : 'non validé'}`
+    paiement.textContent = `Paiement : ${equipe.paiement_valide ? 'validé' : 'non validé'}`
 
     const code = document.createElement('p')
-    code.textContent =
-      `Code actif : ${equipe.code_active ? 'oui' : 'non'}`
+    code.textContent = `Code actif : ${equipe.code_active ? 'oui' : 'non'}`
 
     const expiration = document.createElement('p')
     expiration.textContent = equipe.date_expiration
@@ -1368,7 +1365,16 @@ async function chargerEquipes() {
       afficherPhotosEquipe(equipe, carte)
     })
 
-    actions.append(avancer, retour, prolonger, galerie)
+    const supprimer = document.createElement('button')
+    supprimer.className = 'bouton-secondaire'
+    supprimer.textContent = 'Supprimer l’équipe'
+    supprimer.addEventListener('click', async () => {
+      supprimer.disabled = true
+      await supprimerEquipe(equipe)
+      supprimer.disabled = false
+    })
+
+    actions.append(avancer, retour, prolonger, galerie, supprimer)
 
     const zonePhotos = document.createElement('div')
     zonePhotos.className = 'galerie-photos-equipe'
@@ -1544,9 +1550,183 @@ const gestionEtapes = initialiserGestionEtapes({
   stages,
   photosEtapes
 })
+
 verifierRetourPaiement()
 
+async function supprimerEquipe(equipe) {
+  const confirmation = confirm(
+    `Supprimer définitivement l'équipe "${equipe.nom_equipe}" ?\n\nLes photos et la progression seront supprimées. L'historique des paiements sera conservé.`
+  )
 
+  if (!confirmation) return
+
+  const message = $('#admin-liste-message')
+  message.textContent = `Suppression de ${equipe.nom_equipe} en cours...`
+
+  try {
+    const { data: photos, error: erreurPhotos } = await supabase
+      .from('photos')
+      .select('chemin_fichier')
+      .eq('equipe_id', equipe.id)
+
+    if (erreurPhotos) throw erreurPhotos
+
+    const chemins = (photos || [])
+      .map(photo => photo.chemin_fichier)
+      .filter(Boolean)
+
+    if (chemins.length > 0) {
+      const { error: erreurStockage } = await supabase
+        .storage
+        .from('photos-equipes')
+        .remove(chemins)
+
+      if (erreurStockage) throw erreurStockage
+    }
+
+    const { data, error } = await supabase
+      .from('equipes')
+      .delete()
+      .eq('id', equipe.id)
+      .select('id')
+
+    if (error) throw error
+
+    if (!data || data.length === 0) {
+      throw new Error(
+        "Aucune équipe supprimée. Vérifie les droits d'administration."
+      )
+    }
+
+    message.textContent =
+      `L'équipe "${equipe.nom_equipe}" a bien été supprimée. Les paiements sont conservés.`
+
+    await chargerEquipes()
+
+  } catch (erreur) {
+    message.textContent = `Échec de la suppression : ${erreur.message}`
+  }
+}
+
+// --------------------------------------------------
+// GÉNÉRATEUR DE CODES OFFERTS
+// --------------------------------------------------
+function installerGenerateurCode() {
+  if (document.getElementById('generateur-code-offert')) return
+
+  const liste = $('#liste-equipes')
+  if (!liste) return
+
+  const zone = document.createElement('section')
+  zone.id = 'generateur-code-offert'
+  zone.className = 'carte admin-carte'
+
+  const titre = document.createElement('h3')
+  titre.textContent = 'Générer un code offert'
+
+  const formulaire = document.createElement('form')
+
+  const labelNom = document.createElement('label')
+  labelNom.textContent = 'Nom de l’équipe'
+
+  const nom = document.createElement('input')
+  nom.type = 'text'
+  nom.placeholder = 'Nom de l’équipe'
+  nom.required = true
+  nom.maxLength = 100
+  labelNom.appendChild(nom)
+
+  const labelNombre = document.createElement('label')
+  labelNombre.textContent = 'Nombre de participants'
+
+  const nombre = document.createElement('select')
+
+  for (let i = 1; i <= 5; i++) {
+    const option = document.createElement('option')
+    option.value = String(i)
+    option.textContent = `${i} participant${i > 1 ? 's' : ''}`
+    nombre.appendChild(option)
+  }
+
+  labelNombre.appendChild(nombre)
+
+  const bouton = document.createElement('button')
+  bouton.type = 'submit'
+  bouton.className = 'bouton-principal'
+  bouton.textContent = 'Générer le code'
+
+  const resultat = document.createElement('div')
+  resultat.style.marginTop = '15px'
+
+  formulaire.append(labelNom, labelNombre, bouton)
+  zone.append(titre, formulaire, resultat)
+  liste.before(zone)
+
+  formulaire.addEventListener('submit', async (event) => {
+    event.preventDefault()
+
+    bouton.disabled = true
+    bouton.textContent = 'Génération en cours...'
+    resultat.textContent = ''
+
+    try {
+      const { data, error } = await supabase.rpc(
+        'generer_code_offert',
+        {
+          p_nom_equipe: nom.value.trim(),
+          p_nombre_personnes: Number(nombre.value)
+        }
+      )
+
+      if (error) throw error
+
+      const equipe = Array.isArray(data) ? data[0] : data
+
+      if (!equipe || !equipe.succes || !equipe.code) {
+        throw new Error('Le code n’a pas été généré.')
+      }
+
+      const confirmation = document.createElement('p')
+      confirmation.textContent = 'Code offert créé avec succès !'
+
+      const code = document.createElement('strong')
+      code.textContent = equipe.code
+      code.style.display = 'block'
+      code.style.fontSize = '26px'
+      code.style.letterSpacing = '3px'
+      code.style.margin = '12px 0'
+
+      const copie = document.createElement('button')
+      copie.type = 'button'
+      copie.className = 'bouton-secondaire'
+      copie.textContent = 'Copier le code'
+
+      copie.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(equipe.code)
+          copie.textContent = 'Code copié !'
+        } catch {
+          copie.textContent = 'Copie impossible : sélectionne le code.'
+        }
+      })
+
+      resultat.append(confirmation, code, copie)
+
+      nom.value = ''
+
+      await chargerEquipes()
+
+      $('#admin-liste-message').textContent =
+        `Code offert créé pour ${equipe.nom_equipe}.`
+
+    } catch (erreur) {
+      resultat.textContent = `Erreur : ${erreur.message}`
+    } finally {
+      bouton.disabled = false
+      bouton.textContent = 'Générer le code'
+    }
+  })
+}
 
 
 
