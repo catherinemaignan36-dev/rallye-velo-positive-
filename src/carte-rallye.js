@@ -1,11 +1,9 @@
 
 import * as maplibregl from 'maplibre-gl'
-import { setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 
-// Worker MapLibre 6 avec Vite
-setWorkerUrl(workerUrl)
+maplibregl.setWorkerUrl(workerUrl)
 
 let carte = null
 let marqueurPosition = null
@@ -16,11 +14,6 @@ let dernierePosition = null
 let derniereDirection = 0
 let premiereErreurAffichee = false
 let calculEnCours = false
-
-const STYLE_CARTE = 'https://tiles.openfreemap.org/styles/liberty'
-const SOURCE_ITINERAIRE = 'itineraire'
-const SOURCE_GUIDAGE = 'guidage'
-const COULEUR_RALLYE = '#174D36'
 
 const lieuxRallye = [
   { numero: 1, nom: "Office de tourisme Saint-Martin", lat: 46.205735, lng: -1.365491 },
@@ -135,7 +128,7 @@ function creerMarqueurEtape(lieu) {
     width:30px;
     height:30px;
     border-radius:50%;
-    background:${COULEUR_RALLYE};
+    background:#174D36;
     color:white;
     border:2px solid white;
     display:flex;
@@ -212,8 +205,8 @@ function creerMarqueurVelo() {
 function ajouterCouchesItineraire() {
   if (!carte || !carte.isStyleLoaded()) return
 
-  if (!carte.getSource(SOURCE_ITINERAIRE)) {
-    carte.addSource(SOURCE_ITINERAIRE, {
+  if (!carte.getSource("itineraire")) {
+    carte.addSource("itineraire", {
       type: "geojson",
       data: {
         type: "Feature",
@@ -228,9 +221,9 @@ function ajouterCouchesItineraire() {
     carte.addLayer({
       id: "ligne-itineraire",
       type: "line",
-      source: SOURCE_ITINERAIRE,
+      source: "itineraire",
       paint: {
-        "line-color": COULEUR_RALLYE,
+        "line-color": "#174D36",
         "line-width": 5,
         "line-opacity": 0.9
       },
@@ -241,8 +234,8 @@ function ajouterCouchesItineraire() {
     })
   }
 
-  if (!carte.getSource(SOURCE_GUIDAGE)) {
-    carte.addSource(SOURCE_GUIDAGE, {
+  if (!carte.getSource("guidage")) {
+    carte.addSource("guidage", {
       type: "geojson",
       data: {
         type: "FeatureCollection",
@@ -253,7 +246,7 @@ function ajouterCouchesItineraire() {
     carte.addLayer({
       id: "guidage-fond",
       type: "line",
-      source: SOURCE_GUIDAGE,
+      source: "guidage",
       paint: {
         "line-color": "#FFFFFF",
         "line-width": 11,
@@ -268,7 +261,7 @@ function ajouterCouchesItineraire() {
     carte.addLayer({
       id: "guidage-bleu",
       type: "line",
-      source: SOURCE_GUIDAGE,
+      source: "guidage",
       paint: {
         "line-color": "#2878FF",
         "line-width": 7,
@@ -293,6 +286,7 @@ function actualiserLigneGuidage(latitude, longitude) {
 
   for (let i = 0; i < coordonneesItineraire.length; i++) {
     const point = coordonneesItineraire[i]
+
     const distance = distanceMetres(
       latitude, longitude, point[1], point[0]
     )
@@ -322,7 +316,7 @@ function actualiserLigneGuidage(latitude, longitude) {
 
   if (trajetBleu.length < 2) return
 
-  carte.getSource(SOURCE_GUIDAGE).setData({
+  carte.getSource("guidage").setData({
     type: "FeatureCollection",
     features: [{
       type: "Feature",
@@ -349,7 +343,7 @@ export function initialiserCarteRallye() {
   try {
     carte = new maplibregl.Map({
       container: conteneur,
-      style: STYLE_CARTE,
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [-1.400, 46.205],
       zoom: 12,
       pitch: 65,
@@ -379,11 +373,6 @@ export function initialiserCarteRallye() {
         visualizePitch: true
       }),
       "top-right"
-    )
-
-    carte.addControl(
-      new maplibregl.ScaleControl(),
-      "bottom-left"
     )
 
     carte.on("load", () => {
@@ -423,7 +412,7 @@ async function calculerItineraire() {
 
   const url = new URL("https://brouter.de/brouter")
   url.searchParams.set("lonlats", points)
-  url.searchParams.set("profile", "fastbike")
+  url.searchParams.set("profile", "trekking")
   url.searchParams.set("alternativeidx", "0")
   url.searchParams.set("format", "geojson")
   url.searchParams.set("timode", "3")
@@ -449,7 +438,7 @@ async function calculerItineraire() {
 
       ajouterCouchesItineraire()
 
-      carte.getSource(SOURCE_ITINERAIRE).setData({
+      carte.getSource("itineraire").setData({
         type: "Feature",
         properties: {},
         geometry: geometrie
@@ -601,3 +590,5 @@ export function actualiserPositionCarte(latitude, longitude, capGPS = null) {
     distance
   )
 }
+
+
